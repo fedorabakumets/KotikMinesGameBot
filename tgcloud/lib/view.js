@@ -14,11 +14,14 @@ const NUMBERS = ['▫️', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'
 export function button(text, data) { return { text, callback_data: data }; }
 
 /**
- * Создаёт клавиатуру выбора новой партии.
+ * Создаёт клавиатуру выбора сложности с флажками или без них.
  * @returns {Array} Строки кнопок сложности.
  */
 export function levelButtons() {
-  return [LEVELS.map((count, index) => button(['🙂 Легко', '😎 Средне', '🔥 Сложно'][index], `new:${count}`))];
+  return LEVELS.map((count, index) => {
+    const label = `${['🙂', '😎', '🔥'][index]} ${count} мин`;
+    return [button(`${label} · 🚩`, `new:${count}`), button(`${label} · без флажков`, `plain:${count}`)];
+  });
 }
 
 /**
@@ -39,8 +42,9 @@ export function board(game) {
   const title = game.status === 'won' ? '🏆 Победа! Все безопасные клетки открыты.'
     : game.status === 'lost' ? '💥 Мина! Попробуй ещё раз.' : '💣 Мины — открой все безопасные клетки';
   const progress = `Поле 5×5 · Мин: ${game.count} · Открыто: ${game.opened.length}/${25 - game.count}`;
-  if (!finished) rows.push([button(game.mode === 'open' ? '🚩 Ставить флажки' : '👆 Открывать клетки', `mode:${game.id}`)]);
+  if (!finished && game.flagsEnabled !== false) rows.push([button(game.mode === 'open' ? '🚩 Ставить флажки' : '👆 Открывать клетки', `mode:${game.id}`)]);
   rows.push(...levelButtons(), [button('📊 Статистика', 'stats')]);
-  const help = finished ? '' : `\nРежим: ${game.mode === 'open' ? 'открытие' : 'флажки'} · Флажки: ${game.flags.length}/${game.count}`;
+  const help = game.flagsEnabled === false ? '\nБез флажков: нажимай клетки, чтобы открывать их.'
+    : finished ? '' : `\nРежим: ${game.mode === 'open' ? 'открытие' : 'флажки'} · Флажки: ${game.flags.length}/${game.count}`;
   return { text: `${title}\n${progress}${help}`, reply_markup: { inline_keyboard: rows } };
 }

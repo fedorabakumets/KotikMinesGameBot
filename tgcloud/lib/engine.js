@@ -9,12 +9,13 @@ export const LEVELS = [5, 8, 12];
 /**
  * Создаёт новую партию без размещения мин до первого открытия.
  * @param {number} count - Количество мин.
+ * @param {boolean} flagsEnabled - Возможность ставить флажки в партии.
  * @returns {object} Начальное состояние партии.
  */
-export function newGame(count = 5) {
+export function newGame(count = 5, flagsEnabled = true) {
   if (!LEVELS.includes(count)) throw new Error('Неизвестная сложность');
   return { id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
-    count, mines: [], opened: [], flags: [], mode: 'open', status: 'playing', exploded: -1 };
+    count, flagsEnabled, mines: [], opened: [], flags: [], mode: 'open', status: 'playing', exploded: -1 };
 }
 
 /**
@@ -48,6 +49,7 @@ export function nearbyMines(game, cell) { return neighbors(cell).filter(index =>
  */
 export function move(original, cell, random = Math.random) {
   const game = JSON.parse(JSON.stringify(original));
+  if (game.flagsEnabled === false) { game.mode = 'open'; game.flags = []; }
   if (game.status !== 'playing' || !Number.isInteger(cell) || cell < 0 || cell >= SIZE * SIZE) return game;
   if (game.opened.includes(cell)) return game;
   if (game.mode === 'flag') {

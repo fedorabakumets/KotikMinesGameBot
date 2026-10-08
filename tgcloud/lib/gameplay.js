@@ -28,12 +28,13 @@ export async function render(player) {
  * Начинает отдельную партию и удаляет предыдущее игровое поле.
  * @param {number} userId - Идентификатор игрока.
  * @param {number} count - Количество мин.
+ * @param {boolean} flagsEnabled - Доступность флажков в новой партии.
  * @returns {Promise<void>} Завершение создания партии.
  */
-export async function startGame(userId, count = 5) {
+export async function startGame(userId, count = 5, flagsEnabled = true) {
   if (!LEVELS.includes(count)) return;
   const previous = await getPlayer(userId);
-  const reserved = await saveGame(previous, newGame(count), 0);
+  const reserved = await saveGame(previous, newGame(count, flagsEnabled), 0);
   if (!reserved) return;
   const message = await api.sendMessage({ chat_id: userId, ...board(reserved.game) });
   const saved = await saveGame(reserved, reserved.game, message.message_id);
@@ -62,6 +63,10 @@ export async function play(query) {
   }
   if (player.game.status !== 'playing') {
     await api.answerCallbackQuery({ callback_query_id: query.id, text: 'Партия завершена. Выбери сложность для новой.' });
+    return;
+  }
+  if (action === 'mode' && player.game.flagsEnabled === false) {
+    await api.answerCallbackQuery({ callback_query_id: query.id, text: 'В этой партии флажки отключены. Просто открывай клетки.' });
     return;
   }
   if (action === 'cell' && (!/^\d+$/.test(rawCell || '') || Number(rawCell) >= 25)) {

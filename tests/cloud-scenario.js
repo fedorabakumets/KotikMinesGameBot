@@ -66,6 +66,16 @@ export default async function verifyGame() {
     check(player.wins === 1 && player.losses === 1, 'Победа учитывается отдельно от поражения');
     const stale = await saveGame({ ...player, version: player.version - 1 }, newGame());
     check(!stale && (await getPlayer(userId)).wins === 1, 'Старая версия не перезаписывает статистику');
+    await startGame(userId, 12, false);
+    player = await getPlayer(userId);
+    check(player.game.flagsEnabled === false && player.game.count === 12, 'Вариант без флажков сохраняется в базе');
+    const plainQuery = { ...query, message: { message_id: player.messageId } };
+    await play({ ...plainQuery, data: `mode:${player.game.id}` });
+    check((await getPlayer(userId)).version === player.version, 'Кнопка режима не включает флажки в упрощённой партии');
+    await play({ ...plainQuery, data: `cell:${player.game.id}:12` });
+    const opened = await getPlayer(userId);
+    check(opened.game.opened.includes(12) && opened.game.flags.length === 0 && opened.game.status !== 'lost',
+      'Ход без флажков открывает безопасную клетку');
     return { passed };
   } finally {
     await db.delete(players).where(eq(players.userId, userId)).run();

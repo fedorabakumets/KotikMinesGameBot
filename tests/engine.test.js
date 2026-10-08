@@ -68,3 +68,23 @@ test('Игровая клавиатура не раскрывает скрыты
   assert.equal(ended.reply_markup.inline_keyboard[0][0].text, '💥');
   assert.equal(ended.reply_markup.inline_keyboard[0][1].text, '💣');
 });
+test('Вариант без флажков всегда открывает клетку и не предлагает переключение режима', () => {
+  const plain = { ...newGame(5, false), mode: 'flag', flags: [12] };
+  const game = move(plain, 12, () => 0.42);
+  assert.equal(game.flagsEnabled, false);
+  assert.equal(game.mode, 'open');
+  assert.deepEqual(game.flags, []);
+  assert.ok(game.opened.includes(12));
+  assert.notEqual(game.status, 'lost');
+  assert.ok(!board(game).reply_markup.inline_keyboard.flat().some(item => item.callback_data.startsWith('mode:')));
+});
+test('Выбор партии содержит оба варианта, а прежние партии сохраняют флажки', () => {
+  const legacy = fixture();
+  delete legacy.flagsEnabled;
+  const buttons = board(legacy).reply_markup.inline_keyboard.flat();
+  assert.ok(buttons.some(item => item.callback_data.startsWith('mode:')));
+  for (const count of LEVELS) {
+    assert.ok(buttons.some(item => item.callback_data === `new:${count}`));
+    assert.ok(buttons.some(item => item.callback_data === `plain:${count}`));
+  }
+});
