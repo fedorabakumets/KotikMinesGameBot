@@ -78,13 +78,12 @@ test('Вариант без флажков всегда открывает кл�
   assert.notEqual(game.status, 'lost');
   assert.ok(!board(game).reply_markup.inline_keyboard.flat().some(item => item.callback_data.startsWith('mode:')));
 });
-test('Выбор партии содержит оба варианта, а прежние партии сохраняют флажки', () => {
+test('Поле содержит компактную навигацию, а прежние партии сохраняют флажки', () => {
   const legacy = fixture();
   delete legacy.flagsEnabled;
   const buttons = board(legacy).reply_markup.inline_keyboard.flat();
   assert.ok(buttons.some(item => item.callback_data.startsWith('mode:')));
-  for (const count of LEVELS) {
-    assert.ok(buttons.some(item => item.callback_data === `new:${count}`));
-    assert.ok(buttons.some(item => item.callback_data === `plain:${count}`));
-  }
+  assert.ok(buttons.some(item => item.callback_data === 'games'));
+  assert.ok(buttons.some(item => item.callback_data === 'new:5'));
+  assert.equal(buttons.length, 28);
 });

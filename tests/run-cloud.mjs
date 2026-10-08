@@ -23,10 +23,12 @@ const sources = readModules('tgcloud');
 sources['handlers/message'] = fs.readFileSync('tests/cloud-scenario.js', 'utf8');
 sources['lib/mock-api'] = fs.readFileSync('tests/mock-api.js', 'utf8');
 sources['lib/gameplay'] = sources['lib/gameplay'].replace("import { api } from 'sdk';", "import { api } from './mock-api.js';");
+sources['lib/navigation'] = sources['lib/navigation'].replace("import { api } from 'sdk';", "import { api } from './mock-api.js';");
+sources['handlers/callback_query'] = sources['handlers/callback_query'].replace("import { api } from 'sdk';", "import { api } from '../lib/mock-api.js';");
 const token = process.env.TGCLOUD_TOKEN;
 if (!token) throw new Error('Установите TGCLOUD_TOKEN для проверки.');
 try {
-  for (const scenario of ['cloud-scenario.js', 'cloud-rewards.js']) {
+  for (const scenario of ['cloud-scenario.js', 'cloud-rewards.js', 'cloud-selection.js']) {
     sources['handlers/message'] = fs.readFileSync(`tests/${scenario}`, 'utf8');
     const result = await runFunction(token, 'handlers/message', sources, {}, {});
     for (const line of result.log || []) console.log(line.m);

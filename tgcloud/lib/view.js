@@ -1,7 +1,7 @@
 /**
  * @fileoverview Текст и кнопки игрового поля без раскрытия скрытых мин.
  */
-import { SIZE, LEVELS, nearbyMines } from './engine.js';
+import { SIZE, nearbyMines } from './engine.js';
 import { roundPoints } from './rewards.js';
 /** Обозначения количества соседних мин. */
 const NUMBERS = ['▫️', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'];
@@ -15,16 +15,11 @@ const NUMBERS = ['▫️', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'
 export function button(text, data) { return { text, callback_data: data }; }
 
 /**
- * Создаёт клавиатуру выбора сложности с флажками или без них.
+ * Создаёт компактную навигацию к выбору игры.
  * @returns {Array} Строки кнопок сложности.
  */
 export function levelButtons() {
-  const rows = LEVELS.map((count, index) => {
-    const label = `${['🙂', '😎', '🔥'][index]} ${count} мин`;
-    return [button(`${label} · 🚩`, `new:${count}`), button(`${label} · без флажков`, `plain:${count}`)];
-  });
-  rows.push(LEVELS.map(count => button(`💎 ${count} мин`, `risk:${count}`)));
-  return rows;
+  return [[button('🎮 Выбрать игру', 'games')]];
 }
 
 /**
@@ -48,7 +43,8 @@ export function board(game) {
   const progress = `Поле 5×5 · Мин: ${game.count} · Открыто: ${game.opened.length}/${25 - game.count}`;
   if (!finished && game.variant === 'cashout') rows.push([button(`💰 Забрать: ${roundPoints(game)} очков`, `take:${game.id}`)]);
   if (!finished && game.flagsEnabled !== false) rows.push([button(game.mode === 'open' ? '🚩 Ставить флажки' : '👆 Открывать клетки', `mode:${game.id}`)]);
-  rows.push(...levelButtons(), [button('📊 Статистика', 'stats')]);
+  const action = game.variant === 'cashout' ? 'risk' : game.flagsEnabled === false ? 'plain' : 'new';
+  rows.push([button('🔄 Ещё раз', `${action}:${game.count}`), button('🎮 Выбор игры', 'games')]);
   const help = game.variant === 'cashout' ? `\n💎 Режим «Забрать» · Очки раунда: ${roundPoints(game)}\n`
     + (finished ? 'Раунд завершён.' : 'Клетка = 10 очков. Мина обнулит раунд. Можно забрать после первого хода.')
     : game.flagsEnabled === false ? '\nБез флажков: нажимай клетки, чтобы открывать их.'
