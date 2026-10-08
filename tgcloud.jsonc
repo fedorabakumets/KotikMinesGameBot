@@ -1,0 +1,6 @@
+/**
+ * @fileoverview Настройки отдельного бота с игрой «Мины».
+ */
+{
+  "$schema": "./node_modules/@tgcloud/cli/schema/tgcloud.json"
+}
