@@ -16,4 +16,8 @@ export const players = table('mines_players', {
   wins: integer('wins').notNull().default(0),
   /** Количество поражений. */
   losses: integer('losses').notNull().default(0),
+  /** Сумма сохранённых очков режима «Забрать». */
+  points: integer('points').notNull().default(0),
+  /** Количество раундов, завершённых кнопкой «Забрать». */
+  cashouts: integer('cashouts').notNull().default(0),
 });

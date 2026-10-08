@@ -26,9 +26,12 @@ sources['lib/gameplay'] = sources['lib/gameplay'].replace("import { api } from '
 const token = process.env.TGCLOUD_TOKEN;
 if (!token) throw new Error('Установите TGCLOUD_TOKEN для проверки.');
 try {
-  const result = await runFunction(token, 'handlers/message', sources, {}, {});
-  for (const line of result.log || []) console.log(line.m);
-  console.log(JSON.stringify(result.result));
+  for (const scenario of ['cloud-scenario.js', 'cloud-rewards.js']) {
+    sources['handlers/message'] = fs.readFileSync(`tests/${scenario}`, 'utf8');
+    const result = await runFunction(token, 'handlers/message', sources, {}, {});
+    for (const line of result.log || []) console.log(line.m);
+    console.log(JSON.stringify(result.result));
+  }
 } catch (error) {
   console.error(error.description || error.message);
   process.exitCode = 1;

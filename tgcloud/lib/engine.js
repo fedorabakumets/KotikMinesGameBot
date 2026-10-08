@@ -10,12 +10,15 @@ export const LEVELS = [5, 8, 12];
  * Создаёт новую партию без размещения мин до первого открытия.
  * @param {number} count - Количество мин.
  * @param {boolean} flagsEnabled - Возможность ставить флажки в партии.
+ * @param {string} variant - Классический сапёр или режим забора очков.
  * @returns {object} Начальное состояние партии.
  */
-export function newGame(count = 5, flagsEnabled = true) {
+export function newGame(count = 5, flagsEnabled = true, variant = 'classic') {
   if (!LEVELS.includes(count)) throw new Error('Неизвестная сложность');
+  if (!['classic', 'cashout'].includes(variant)) throw new Error('Неизвестный режим');
   return { id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`,
-    count, flagsEnabled, mines: [], opened: [], flags: [], mode: 'open', status: 'playing', exploded: -1 };
+    count, variant, flagsEnabled: variant === 'cashout' ? false : flagsEnabled,
+    mines: [], opened: [], flags: [], mode: 'open', status: 'playing', exploded: -1 };
 }
 
 /**
@@ -67,6 +70,11 @@ export function move(original, cell, random = Math.random) {
     game.mines = pool.slice(0, game.count);
   }
   if (game.mines.includes(cell)) { game.status = 'lost'; game.exploded = cell; return game; }
+  if (game.variant === 'cashout') {
+    game.opened.push(cell);
+    if (game.opened.length === SIZE * SIZE - game.count) game.status = 'won';
+    return game;
+  }
   const queue = [cell], opened = new Set(game.opened);
   while (queue.length) {
     const next = queue.pop();

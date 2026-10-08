@@ -5,6 +5,7 @@ import { api } from 'sdk';
 import { newGame, move, LEVELS } from './engine.js';
 import { getPlayer, saveGame } from './storage.js';
 import { board, levelButtons } from './view.js';
+import { cashOut } from './rewards.js';
 
 /**
  * Обновляет поле по последней сохранённой версии даже при одновременных ходах.
@@ -29,12 +30,13 @@ export async function render(player) {
  * @param {number} userId - Идентификатор игрока.
  * @param {number} count - Количество мин.
  * @param {boolean} flagsEnabled - Доступность флажков в новой партии.
+ * @param {string} variant - Вариант игры: сапёр или забор очков.
  * @returns {Promise<void>} Завершение создания партии.
  */
-export async function startGame(userId, count = 5, flagsEnabled = true) {
+export async function startGame(userId, count = 5, flagsEnabled = true, variant = 'classic') {
   if (!LEVELS.includes(count)) return;
   const previous = await getPlayer(userId);
-  const reserved = await saveGame(previous, newGame(count, flagsEnabled), 0);
+  const reserved = await saveGame(previous, newGame(count, flagsEnabled, variant), 0);
   if (!reserved) return;
   const message = await api.sendMessage({ chat_id: userId, ...board(reserved.game) });
   const saved = await saveGame(reserved, reserved.game, message.message_id);
@@ -73,7 +75,12 @@ export async function play(query) {
     await api.answerCallbackQuery({ callback_query_id: query.id, text: 'Неизвестная клетка.' });
     return;
   }
-  const game = action === 'mode' ? { ...player.game, mode: player.game.mode === 'open' ? 'flag' : 'open' }
+  if (action === 'take' && cashOut(player.game) === player.game) {
+    await api.answerCallbackQuery({ callback_query_id: query.id, text: 'Открой безопасную клетку в режиме «Забрать».' });
+    return;
+  }
+  const game = action === 'take' ? cashOut(player.game)
+    : action === 'mode' ? { ...player.game, mode: player.game.mode === 'open' ? 'flag' : 'open' }
     : move(player.game, Number(rawCell));
   const saved = await saveGame(player, game);
   await api.answerCallbackQuery({ callback_query_id: query.id, text: saved ? undefined : 'Ход уже обработан. Нажми ещё раз.' });
@@ -88,6 +95,7 @@ export async function play(query) {
 export async function showStats(userId) {
   const player = await getPlayer(userId);
   return api.sendMessage({ chat_id: userId,
-    text: `📊 Твоя статистика\n🏆 Победы: ${player.wins}\n💥 Поражения: ${player.losses}\nНезавершённые партии не учитываются.`,
+    text: `📊 Твоя статистика\n🏆 Победы: ${player.wins}\n💥 Поражения: ${player.losses}\n`
+      + `💰 Сохранённые очки: ${player.points}\n💎 Забрано раундов: ${player.cashouts}\nНезавершённые партии не учитываются.`,
     reply_markup: { inline_keyboard: levelButtons() } });
 }

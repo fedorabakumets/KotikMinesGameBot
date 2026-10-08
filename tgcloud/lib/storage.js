@@ -4,6 +4,7 @@
 import { db } from 'sdk';
 import { eq, and } from 'sdk/db';
 import { players } from '../schema.js';
+import { roundPoints } from './rewards.js';
 
 /**
  * Загружает игрока, создавая пустую запись при первом обращении.
@@ -26,7 +27,9 @@ export async function saveGame(player, game, messageId = player.messageId) {
   const finished = player.game.id === game.id && player.game.status === 'playing' && game.status !== 'playing';
   const rows = await db.update(players).set({ game, messageId, version: player.version + 1,
     wins: player.wins + (finished && game.status === 'won' ? 1 : 0),
-    losses: player.losses + (finished && game.status === 'lost' ? 1 : 0) })
+    losses: player.losses + (finished && game.status === 'lost' ? 1 : 0),
+    points: player.points + (finished && ['won', 'cashed'].includes(game.status) ? roundPoints(game) : 0),
+    cashouts: player.cashouts + (finished && game.status === 'cashed' ? 1 : 0) })
     .where(and(eq(players.userId, player.userId), eq(players.version, player.version))).returning().run();
   return rows[0];
 }
